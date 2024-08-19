@@ -456,6 +456,7 @@ class SerialClient(object):
         # Handle reading.
         data = ''
         read_step = None
+        sleep_duration = rospy.get_param('~max_read_delay', 0.001)
         while self.write_thread.is_alive() and not rospy.is_shutdown():
             if (rospy.Time.now() - self.lastsync).to_sec() > (self.timeout * 3):
                 if self.synced:
@@ -473,7 +474,7 @@ class SerialClient(object):
             try:
                 with self.read_lock:
                     if self.port.inWaiting() < 1:
-                        time.sleep(0.001)
+                        time.sleep(sleep_duration)
                         continue
 
                 # Find sync flag.
@@ -774,9 +775,10 @@ class SerialClient(object):
         """
         Main loop for the thread that processes outgoing data to write to the serial port.
         """
+        sleep_duration = rospy.get_param('~max_write_delay', 0.01)
         while not rospy.is_shutdown():
             if self.write_queue.empty():
-                time.sleep(0.01)
+                time.sleep(sleep_duration)
             else:
                 data = self.write_queue.get()
                 while True:
